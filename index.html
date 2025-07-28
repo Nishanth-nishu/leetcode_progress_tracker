@@ -32,12 +32,55 @@
             color: white;
             padding: 30px;
             text-align: center;
+            position: relative;
         }
 
         .header h1 {
             font-size: 2.5em;
             margin-bottom: 10px;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .auth-section {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .auth-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+
+        .auth-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .user-info {
+            color: white;
+            font-size: 0.9em;
+        }
+
+        .loading {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 1000;
         }
 
         .stats-grid {
@@ -263,6 +306,27 @@
             transform: translateY(-2px);
         }
 
+        .sync-status {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #27ae60;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .sync-status.show {
+            opacity: 1;
+        }
+
+        .sync-status.error {
+            background: #e74c3c;
+        }
+
         @media (max-width: 768px) {
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
@@ -271,13 +335,32 @@
             .header h1 {
                 font-size: 2em;
             }
+
+            .auth-section {
+                position: static;
+                justify-content: center;
+                margin-top: 15px;
+            }
         }
     </style>
 </head>
 <body>
+    <div class="loading" id="loading">
+        <div>🔄 Syncing with Firebase...</div>
+    </div>
+
+    <div class="sync-status" id="syncStatus">
+        ✅ Data synced successfully
+    </div>
+
     <div class="container">
         <!-- Header -->
         <div class="header">
+            <div class="auth-section">
+                <div class="user-info" id="userInfo" style="display: none;"></div>
+                <button class="auth-btn" id="signInBtn" onclick="signInWithGoogle()">🔐 Sign In</button>
+                <button class="auth-btn" id="signOutBtn" onclick="signOutUser()" style="display: none;">🚪 Sign Out</button>
+            </div>
             <h1>🚀 30-Day LeetCode Mastery</h1>
             <p>Track your progress, build patterns, boost your profile!</p>
         </div>
@@ -308,15 +391,15 @@
             <div class="contest-grid">
                 <div class="contest-card">
                     <h3>Weekly Contest #420</h3>
-                    <p><strong>Date:</strong> <input type="date" style="background: transparent; border: 1px solid white; color: white; padding: 5px; border-radius: 5px;"></p>
-                    <p><strong>Problems Solved:</strong> <input type="number" min="0" max="4" style="width: 60px; background: transparent; border: 1px solid white; color: white; text-align: center; padding: 5px; border-radius: 5px;"> / 4</p>
-                    <p><strong>Rank:</strong> <input type="number" style="width: 80px; background: transparent; border: 1px solid white; color: white; text-align: center; padding: 5px; border-radius: 5px;"></p>
+                    <p><strong>Date:</strong> <input type="date" style="background: transparent; border: 1px solid white; color: white; padding: 5px; border-radius: 5px;" onchange="saveContestData()"></p>
+                    <p><strong>Problems Solved:</strong> <input type="number" min="0" max="4" style="width: 60px; background: transparent; border: 1px solid white; color: white; text-align: center; padding: 5px; border-radius: 5px;" onchange="saveContestData()"> / 4</p>
+                    <p><strong>Rank:</strong> <input type="number" style="width: 80px; background: transparent; border: 1px solid white; color: white; text-align: center; padding: 5px; border-radius: 5px;" onchange="saveContestData()"></p>
                 </div>
                 <div class="contest-card">
                     <h3>Biweekly Contest #145</h3>
-                    <p><strong>Date:</strong> <input type="date" style="background: transparent; border: 1px solid white; color: white; padding: 5px; border-radius: 5px;"></p>
-                    <p><strong>Problems Solved:</strong> <input type="number" min="0" max="4" style="width: 60px; background: transparent; border: 1px solid white; color: white; text-align: center; padding: 5px; border-radius: 5px;"> / 4</p>
-                    <p><strong>Rank:</strong> <input type="number" style="width: 80px; background: transparent; border: 1px solid white; color: white; text-align: center; padding: 5px; border-radius: 5px;"></p>
+                    <p><strong>Date:</strong> <input type="date" style="background: transparent; border: 1px solid white; color: white; padding: 5px; border-radius: 5px;" onchange="saveContestData()"></p>
+                    <p><strong>Problems Solved:</strong> <input type="number" min="0" max="4" style="width: 60px; background: transparent; border: 1px solid white; color: white; text-align: center; padding: 5px; border-radius: 5px;" onchange="saveContestData()"> / 4</p>
+                    <p><strong>Rank:</strong> <input type="number" style="width: 80px; background: transparent; border: 1px solid white; color: white; text-align: center; padding: 5px; border-radius: 5px;" onchange="saveContestData()"></p>
                 </div>
             </div>
         </div>
@@ -324,7 +407,516 @@
         <!-- Progress Tracking -->
         <div class="progress-section">
             <div class="week-section">
-                <div class="week-header">Week 1: Foundation Patterns (Arrays, Hashing, Two Pointers)</div>
+                <div class="week-header">Week 3: Trees, Binary Search & Heaps</div>
+                <div style="padding: 20px; text-align: center; color: #666;">
+                    <p>📅 Days 15-21: Binary Trees, BSTs, Binary Search, Heaps, Tries</p>
+                    <p><em>This section will auto-populate as you progress through the weeks</em></p>
+                </div>
+            </div>
+
+            <div class="week-section">
+                <div class="week-header">Week 4: Graphs, Dynamic Programming & Advanced Patterns</div>
+                <div style="padding: 20px; text-align: center; color: #666;">
+                    <p>📅 Days 22-30: Graph Algorithms, DP, Backtracking, Mock Interviews</p>
+                    <p><em>Final week focuses on FAANG-level problems and interview simulation</em></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Export Section -->
+        <div class="export-section">
+            <h2>📊 Export Your Progress</h2>
+            <button class="export-btn" onclick="exportProgress()">📋 Export as Text</button>
+            <button class="export-btn" onclick="generateReport()">📈 Generate Report</button>
+            <button class="export-btn" onclick="syncToFirebase()">☁️ Sync to Cloud</button>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { getAnalytics } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js';
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBUxosEm2PoOjr6cabBHgopew3w81dbjAk",
+            authDomain: "leetcode-tracker-c79ce.firebaseapp.com",
+            projectId: "leetcode-tracker-c79ce",
+            storageBucket: "leetcode-tracker-c79ce.firebasestorage.app",
+            messagingSenderId: "36537045265",
+            appId: "1:36537045265:web:4b308443700e6a2c603cb0",
+            measurementId: "G-28FJGKLD69"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const analytics = getAnalytics(app);
+        const provider = new GoogleAuthProvider();
+
+        // Global variables
+        window.auth = auth;
+        window.db = db;
+        window.currentUser = null;
+        window.unsubscribe = null;
+
+        // Auth state observer
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                window.currentUser = user;
+                document.getElementById('signInBtn').style.display = 'none';
+                document.getElementById('signOutBtn').style.display = 'inline-block';
+                document.getElementById('userInfo').style.display = 'inline-block';
+                document.getElementById('userInfo').textContent = `👋 ${user.displayName || user.email}`;
+                
+                // Load user data from Firestore
+                loadFirebaseData();
+                
+                // Set up real-time listener
+                setupRealtimeListener();
+            } else {
+                window.currentUser = null;
+                document.getElementById('signInBtn').style.display = 'inline-block';
+                document.getElementById('signOutBtn').style.display = 'none';
+                document.getElementById('userInfo').style.display = 'none';
+                
+                // Clean up listener
+                if (window.unsubscribe) {
+                    window.unsubscribe();
+                    window.unsubscribe = null;
+                }
+                
+                // Load local data as fallback
+                loadLocalData();
+            }
+        });
+
+        // Google Sign In
+        window.signInWithGoogle = async () => {
+            try {
+                showLoading(true);
+                const result = await signInWithPopup(auth, provider);
+                showSyncStatus('🎉 Successfully signed in!', 'success');
+            } catch (error) {
+                console.error('Sign in error:', error);
+                showSyncStatus('❌ Sign in failed', 'error');
+            } finally {
+                showLoading(false);
+            }
+        };
+
+        // Sign Out
+        window.signOutUser = async () => {
+            try {
+                await signOut(auth);
+                showSyncStatus('👋 Successfully signed out', 'success');
+                // Clear local data
+                localStorage.removeItem('leetcodeProgress');
+                location.reload();
+            } catch (error) {
+                console.error('Sign out error:', error);
+                showSyncStatus('❌ Sign out failed', 'error');
+            }
+        };
+
+        // Load data from Firebase
+        async function loadFirebaseData() {
+            if (!window.currentUser) return;
+            
+            try {
+                showLoading(true);
+                const docRef = doc(db, 'users', window.currentUser.uid);
+                const docSnap = await getDoc(docRef);
+                
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    applyDataToUI(data);
+                    showSyncStatus('✅ Data loaded from cloud', 'success');
+                } else {
+                    console.log('No cloud data found, using local data');
+                    loadLocalData();
+                }
+            } catch (error) {
+                console.error('Error loading from Firebase:', error);
+                showSyncStatus('⚠️ Cloud sync failed, using local data', 'error');
+                loadLocalData();
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Setup real-time listener
+        function setupRealtimeListener() {
+            if (!window.currentUser) return;
+            
+            const docRef = doc(db, 'users', window.currentUser.uid);
+            window.unsubscribe = onSnapshot(docRef, (doc) => {
+                if (doc.exists()) {
+                    const data = doc.data();
+                    // Only update if data is different (to avoid infinite loops)
+                    if (JSON.stringify(data) !== JSON.stringify(getCurrentData())) {
+                        applyDataToUI(data);
+                        showSyncStatus('🔄 Data synced', 'success');
+                    }
+                }
+            });
+        }
+
+        // Save to Firebase
+        window.saveToFirebase = async (data = null) => {
+            if (!window.currentUser) {
+                saveToLocal();
+                return;
+            }
+            
+            try {
+                const dataToSave = data || getCurrentData();
+                const docRef = doc(db, 'users', window.currentUser.uid);
+                await setDoc(docRef, {
+                    ...dataToSave,
+                    lastUpdated: new Date().toISOString()
+                }, { merge: true });
+                
+                // Also save locally as backup
+                saveToLocal(dataToSave);
+                
+            } catch (error) {
+                console.error('Error saving to Firebase:', error);
+                showSyncStatus('⚠️ Cloud sync failed', 'error');
+                // Fallback to local storage
+                saveToLocal();
+            }
+        };
+
+        // Manual sync function
+        window.syncToFirebase = async () => {
+            if (!window.currentUser) {
+                alert('Please sign in to sync to cloud!');
+                return;
+            }
+            
+            showLoading(true);
+            await window.saveToFirebase();
+            showLoading(false);
+            showSyncStatus('☁️ Synced to cloud!', 'success');
+        };
+    </script>
+
+    <script>
+        // Progress tracking variables
+        let completedProblems = 0;
+        let currentStreak = 0;
+        let contestsJoined = 0;
+        let patternsLearned = new Set();
+        let saveTimeout = null;
+
+        // Initialize app
+        window.onload = function() {
+            // Auth state will handle data loading
+            updateStats();
+            setupEventListeners();
+        };
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Problem checkboxes
+            const checkboxes = document.querySelectorAll('.problem-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const problemItem = this.closest('.problem-item');
+                    const patternTag = problemItem.querySelector('.pattern-tag');
+                    
+                    if (this.checked) {
+                        completedProblems++;
+                        problemItem.style.opacity = '0.7';
+                        problemItem.style.textDecoration = 'line-through';
+                        
+                        if (patternTag) {
+                            patternsLearned.add(patternTag.textContent);
+                        }
+                    } else {
+                        completedProblems--;
+                        problemItem.style.opacity = '1';
+                        problemItem.style.textDecoration = 'none';
+                    }
+                    
+                    updateStats();
+                    debouncedSave();
+                });
+            });
+
+            // Notes textareas
+            const textareas = document.querySelectorAll('.notes-textarea');
+            textareas.forEach(textarea => {
+                textarea.addEventListener('input', debouncedSave);
+            });
+        }
+
+        // Debounced save function
+        function debouncedSave() {
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => {
+                if (window.saveToFirebase) {
+                    window.saveToFirebase();
+                } else {
+                    saveToLocal();
+                }
+            }, 1000);
+        }
+
+        // Toggle day status
+        function toggleDayStatus(element) {
+            const statuses = ['status-pending', 'status-completed', 'status-skipped'];
+            const statusTexts = ['Pending', 'Completed', 'Skipped'];
+            
+            let currentIndex = 0;
+            statuses.forEach((status, index) => {
+                if (element.classList.contains(status)) {
+                    currentIndex = index;
+                }
+            });
+            
+            element.classList.remove(statuses[currentIndex]);
+            const nextIndex = (currentIndex + 1) % statuses.length;
+            element.classList.add(statuses[nextIndex]);
+            element.textContent = statusTexts[nextIndex];
+            
+            updateStreak();
+            debouncedSave();
+        }
+
+        // Update statistics
+        function updateStats() {
+            document.getElementById('completedProblems').textContent = completedProblems;
+            document.getElementById('currentStreak').textContent = currentStreak;
+            document.getElementById('contestsJoined').textContent = contestsJoined;
+            document.getElementById('patternsLearned').textContent = patternsLearned.size;
+        }
+
+        // Update streak calculation
+        function updateStreak() {
+            const completedDays = document.querySelectorAll('.status-completed').length;
+            currentStreak = completedDays;
+            updateStats();
+        }
+
+        // Get current data state
+        function getCurrentData() {
+            const data = {
+                completedProblems,
+                currentStreak,
+                contestsJoined,
+                patternsLearned: Array.from(patternsLearned),
+                dayStatuses: {},
+                problemStates: {},
+                notes: {},
+                contests: {}
+            };
+            
+            // Save day statuses and notes
+            document.querySelectorAll('.day-card').forEach((card, index) => {
+                const status = card.querySelector('.day-status').textContent;
+                const notes = card.querySelector('.notes-textarea').value;
+                data.dayStatuses[index] = status;
+                data.notes[index] = notes;
+            });
+            
+            // Save problem states
+            document.querySelectorAll('.problem-checkbox').forEach((checkbox, index) => {
+                data.problemStates[index] = checkbox.checked;
+            });
+
+            // Save contest data
+            const contestInputs = document.querySelectorAll('.contest-card input');
+            contestInputs.forEach((input, index) => {
+                data.contests[index] = input.value;
+            });
+            
+            return data;
+        }
+
+        // Apply data to UI
+        function applyDataToUI(data) {
+            if (!data) return;
+            
+            completedProblems = data.completedProblems || 0;
+            currentStreak = data.currentStreak || 0;
+            contestsJoined = data.contestsJoined || 0;
+            patternsLearned = new Set(data.patternsLearned || []);
+            
+            // Restore day statuses and notes
+            if (data.dayStatuses) {
+                Object.keys(data.dayStatuses).forEach(index => {
+                    const dayCard = document.querySelectorAll('.day-card')[index];
+                    if (dayCard) {
+                        const statusElement = dayCard.querySelector('.day-status');
+                        const status = data.dayStatuses[index];
+                        
+                        statusElement.classList.remove('status-pending', 'status-completed', 'status-skipped');
+                        
+                        if (status === 'Completed') {
+                            statusElement.classList.add('status-completed');
+                        } else if (status === 'Skipped') {
+                            statusElement.classList.add('status-skipped');
+                        } else {
+                            statusElement.classList.add('status-pending');
+                        }
+                        statusElement.textContent = status;
+                    }
+                });
+            }
+            
+            // Restore notes
+            if (data.notes) {
+                Object.keys(data.notes).forEach(index => {
+                    const dayCard = document.querySelectorAll('.day-card')[index];
+                    if (dayCard) {
+                        const textarea = dayCard.querySelector('.notes-textarea');
+                        if (textarea) textarea.value = data.notes[index] || '';
+                    }
+                });
+            }
+            
+            // Restore problem states
+            if (data.problemStates) {
+                Object.keys(data.problemStates).forEach(index => {
+                    const checkbox = document.querySelectorAll('.problem-checkbox')[index];
+                    if (checkbox) {
+                        checkbox.checked = data.problemStates[index];
+                        const problemItem = checkbox.closest('.problem-item');
+                        if (checkbox.checked) {
+                            problemItem.style.opacity = '0.7';
+                            problemItem.style.textDecoration = 'line-through';
+                        }
+                    }
+                });
+            }
+
+            // Restore contest data
+            if (data.contests) {
+                const contestInputs = document.querySelectorAll('.contest-card input');
+                Object.keys(data.contests).forEach(index => {
+                    const input = contestInputs[index];
+                    if (input) input.value = data.contests[index] || '';
+                });
+            }
+            
+            updateStats();
+        }
+
+        // Save to local storage (fallback)
+        function saveToLocal(data = null) {
+            const dataToSave = data || getCurrentData();
+            localStorage.setItem('leetcodeProgress', JSON.stringify(dataToSave));
+        }
+
+        // Load from local storage
+        function loadLocalData() {
+            const savedData = localStorage.getItem('leetcodeProgress');
+            if (savedData) {
+                try {
+                    const data = JSON.parse(savedData);
+                    applyDataToUI(data);
+                } catch (error) {
+                    console.error('Error loading local data:', error);
+                }
+            }
+        }
+
+        // Contest data save
+        function saveContestData() {
+            debouncedSave();
+        }
+
+        // Export progress
+        function exportProgress() {
+            let report = "🚀 30-Day LeetCode Progress Report\n";
+            report += "=====================================\n\n";
+            report += `📊 Statistics:\n`;
+            report += `• Problems Solved: ${completedProblems}\n`;
+            report += `• Current Streak: ${currentStreak} days\n`;
+            report += `• Contests Joined: ${contestsJoined}\n`;
+            report += `• Patterns Learned: ${patternsLearned.size}\n\n`;
+            
+            report += "📚 Patterns Mastered:\n";
+            patternsLearned.forEach(pattern => {
+                report += `• ${pattern}\n`;
+            });
+            
+            report += "\n📝 Daily Progress:\n";
+            const dayCards = document.querySelectorAll('.day-card');
+            dayCards.forEach((card, index) => {
+                const dayTitle = card.querySelector('.day-title').textContent;
+                const status = card.querySelector('.day-status').textContent;
+                const notes = card.querySelector('.notes-textarea').value;
+                
+                report += `Day ${index + 1}: ${dayTitle} - ${status}\n`;
+                if (notes.trim()) {
+                    report += `Notes: ${notes}\n`;
+                }
+                report += "\n";
+            });
+            
+            const blob = new Blob([report], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'leetcode-progress-report.txt';
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        // Generate progress report
+        function generateReport() {
+            const report = {
+                date: new Date().toISOString().split('T')[0],
+                stats: {
+                    completedProblems,
+                    currentStreak,
+                    contestsJoined,
+                    patternsLearned: Array.from(patternsLearned)
+                },
+                completionRate: ((completedProblems / 100) * 100).toFixed(1) + '%'
+            };
+            
+            alert(`📈 Progress Report (${report.date}):\n\n` +
+                  `✅ Completion Rate: ${report.completionRate}\n` +
+                  `📚 Problems Solved: ${completedProblems}/100\n` +
+                  `🔥 Current Streak: ${currentStreak} days\n` +
+                  `🏆 Contests: ${contestsJoined}\n` +
+                  `🧠 Patterns: ${patternsLearned.size}/15`);
+        }
+
+        // Utility functions
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+
+        function showSyncStatus(message, type = 'success') {
+            const statusEl = document.getElementById('syncStatus');
+            statusEl.textContent = message;
+            statusEl.className = `sync-status ${type} show`;
+            
+            setTimeout(() => {
+                statusEl.classList.remove('show');
+            }, 3000);
+        }
+
+        // Auto-save every 30 seconds
+        setInterval(() => {
+            if (window.saveToFirebase) {
+                window.saveToFirebase();
+            } else {
+                saveToLocal();
+            }
+        }, 30000);
+    </script>
+</body>
+</html>">Week 1: Foundation Patterns (Arrays, Hashing, Two Pointers)</div>
                 <div class="day-grid">
                     <div class="day-card" data-day="1">
                         <div class="day-header">
@@ -352,7 +944,7 @@
                             </div>
                         </div>
                         <div class="notes-section">
-                            <textarea class="notes-textarea" placeholder="Notes: Key patterns learned, difficulties faced, insights..."></textarea>
+                            <textarea class="notes-textarea" placeholder="Notes: Key patterns learned, difficulties faced, insights..." onchange="debouncedSave()"></textarea>
                         </div>
                     </div>
 
@@ -382,7 +974,7 @@
                             </div>
                         </div>
                         <div class="notes-section">
-                            <textarea class="notes-textarea" placeholder="Notes: Key patterns learned, difficulties faced, insights..."></textarea>
+                            <textarea class="notes-textarea" placeholder="Notes: Key patterns learned, difficulties faced, insights..." onchange="debouncedSave()"></textarea>
                         </div>
                     </div>
 
@@ -412,7 +1004,7 @@
                             </div>
                         </div>
                         <div class="notes-section">
-                            <textarea class="notes-textarea" placeholder="Notes: Key patterns learned, difficulties faced, insights..."></textarea>
+                            <textarea class="notes-textarea" placeholder="Notes: Key patterns learned, difficulties faced, insights..." onchange="debouncedSave()"></textarea>
                         </div>
                     </div>
 
@@ -442,7 +1034,7 @@
                             </div>
                         </div>
                         <div class="notes-section">
-                            <textarea class="notes-textarea" placeholder="Notes: Key patterns learned, difficulties faced, insights..."></textarea>
+                            <textarea class="notes-textarea" placeholder="Notes: Key patterns learned, difficulties faced, insights..." onchange="debouncedSave()"></textarea>
                         </div>
                     </div>
 
@@ -472,7 +1064,7 @@
                             </div>
                         </div>
                         <div class="notes-section">
-                            <textarea class="notes-textarea" placeholder="Notes: Key patterns learned, difficulties faced, insights..."></textarea>
+                            <textarea class="notes-textarea" placeholder="Notes: Key patterns learned, difficulties faced, insights..." onchange="debouncedSave()"></textarea>
                         </div>
                     </div>
 
@@ -502,7 +1094,7 @@
                             </div>
                         </div>
                         <div class="notes-section">
-                            <textarea class="notes-textarea" placeholder="Notes: Key patterns learned, difficulties faced, insights..."></textarea>
+                            <textarea class="notes-textarea" placeholder="Notes: Key patterns learned, difficulties faced, insights..." onchange="debouncedSave()"></textarea>
                         </div>
                     </div>
 
@@ -532,7 +1124,7 @@
                             </div>
                         </div>
                         <div class="notes-section">
-                            <textarea class="notes-textarea" placeholder="Notes: Contest performance, patterns mastered, areas to improve..."></textarea>
+                            <textarea class="notes-textarea" placeholder="Notes: Contest performance, patterns mastered, areas to improve..." onchange="debouncedSave()"></textarea>
                         </div>
                     </div>
                 </div>
@@ -568,11 +1160,10 @@
                             </div>
                         </div>
                         <div class="notes-section">
-                            <textarea class="notes-textarea" placeholder="Notes: Key patterns learned, difficulties faced, insights..."></textarea>
+                            <textarea class="notes-textarea" placeholder="Notes: Key patterns learned, difficulties faced, insights..." onchange="debouncedSave()"></textarea>
                         </div>
                     </div>
 
-                    <!-- Continue with more days... -->
                     <div class="day-card" data-day="9">
                         <div class="day-header">
                             <div class="day-title">Day 9: Advanced Linked Lists</div>
@@ -599,11 +1190,10 @@
                             </div>
                         </div>
                         <div class="notes-section">
-                            <textarea class="notes-textarea" placeholder="Notes: Key patterns learned, difficulties faced, insights..."></textarea>
+                            <textarea class="notes-textarea" placeholder="Notes: Key patterns learned, difficulties faced, insights..." onchange="debouncedSave()"></textarea>
                         </div>
                     </div>
 
-                    <!-- Add remaining days for Week 2 -->
                     <div class="day-card" data-day="10">
                         <div class="day-header">
                             <div class="day-title">Day 10: Stack Fundamentals</div>
@@ -630,7 +1220,7 @@
                             </div>
                         </div>
                         <div class="notes-section">
-                            <textarea class="notes-textarea" placeholder="Notes: Key patterns learned, difficulties faced, insights..."></textarea>
+                            <textarea class="notes-textarea" placeholder="Notes: Key patterns learned, difficulties faced, insights..." onchange="debouncedSave()"></textarea>
                         </div>
                     </div>
                 </div>
@@ -638,262 +1228,4 @@
 
             <!-- Week 3 & 4 Preview Cards -->
             <div class="week-section">
-                <div class="week-header">Week 3: Trees, Binary Search & Heaps</div>
-                <div style="padding: 20px; text-align: center; color: #666;">
-                    <p>📅 Days 15-21: Binary Trees, BSTs, Binary Search, Heaps, Tries</p>
-                    <p><em>This section will auto-populate as you progress through the weeks</em></p>
-                </div>
-            </div>
-
-            <div class="week-section">
-                <div class="week-header">Week 4: Graphs, Dynamic Programming & Advanced Patterns</div>
-                <div style="padding: 20px; text-align: center; color: #666;">
-                    <p>📅 Days 22-30: Graph Algorithms, DP, Backtracking, Mock Interviews</p>
-                    <p><em>Final week focuses on FAANG-level problems and interview simulation</em></p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Export Section -->
-        <div class="export-section">
-            <h2>📊 Export Your Progress</h2>
-            <button class="export-btn" onclick="exportProgress()">📋 Export as Text</button>
-            <button class="export-btn" onclick="generateReport()">📈 Generate Report</button>
-            <button class="export-btn" onclick="saveData()">💾 Save Progress</button>
-        </div>
-    </div>
-
-    <script>
-        // Progress tracking variables
-        let completedProblems = 0;
-        let currentStreak = 0;
-        let contestsJoined = 0;
-        let patternsLearned = new Set();
-
-        // Load saved data
-        window.onload = function() {
-            loadSavedData();
-            updateStats();
-        };
-
-        function toggleDayStatus(element) {
-            const statuses = ['status-pending', 'status-completed', 'status-skipped'];
-            const statusTexts = ['Pending', 'Completed', 'Skipped'];
-            
-            let currentIndex = 0;
-            statuses.forEach((status, index) => {
-                if (element.classList.contains(status)) {
-                    currentIndex = index;
-                }
-            });
-            
-            // Remove current status
-            element.classList.remove(statuses[currentIndex]);
-            
-            // Add next status (cycle through)
-            const nextIndex = (currentIndex + 1) % statuses.length;
-            element.classList.add(statuses[nextIndex]);
-            element.textContent = statusTexts[nextIndex];
-            
-            // Update streak
-            updateStreak();
-            saveData();
-        }
-
-        // Add event listeners to checkboxes
-        document.addEventListener('DOMContentLoaded', function() {
-            const checkboxes = document.querySelectorAll('.problem-checkbox');
-            checkboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', function() {
-                    const problemItem = this.closest('.problem-item');
-                    const patternTag = problemItem.querySelector('.pattern-tag');
-                    
-                    if (this.checked) {
-                        completedProblems++;
-                        problemItem.style.opacity = '0.7';
-                        problemItem.style.textDecoration = 'line-through';
-                        
-                        // Add pattern to learned set
-                        if (patternTag) {
-                            patternsLearned.add(patternTag.textContent);
-                        }
-                    } else {
-                        completedProblems--;
-                        problemItem.style.opacity = '1';
-                        problemItem.style.textDecoration = 'none';
-                    }
-                    
-                    updateStats();
-                    saveData();
-                });
-            });
-        });
-
-        function updateStats() {
-            document.getElementById('completedProblems').textContent = completedProblems;
-            document.getElementById('currentStreak').textContent = currentStreak;
-            document.getElementById('contestsJoined').textContent = contestsJoined;
-            document.getElementById('patternsLearned').textContent = patternsLearned.size;
-        }
-
-        function updateStreak() {
-            const completedDays = document.querySelectorAll('.status-completed').length;
-            currentStreak = completedDays;
-            updateStats();
-        }
-
-        function exportProgress() {
-            let report = "🚀 30-Day LeetCode Progress Report\n";
-            report += "=====================================\n\n";
-            report += `📊 Statistics:\n`;
-            report += `• Problems Solved: ${completedProblems}\n`;
-            report += `• Current Streak: ${currentStreak} days\n`;
-            report += `• Contests Joined: ${contestsJoined}\n`;
-            report += `• Patterns Learned: ${patternsLearned.size}\n\n`;
-            
-            report += "📚 Patterns Mastered:\n";
-            patternsLearned.forEach(pattern => {
-                report += `• ${pattern}\n`;
-            });
-            
-            report += "\n📝 Daily Progress:\n";
-            const dayCards = document.querySelectorAll('.day-card');
-            dayCards.forEach((card, index) => {
-                const dayTitle = card.querySelector('.day-title').textContent;
-                const status = card.querySelector('.day-status').textContent;
-                const notes = card.querySelector('.notes-textarea').value;
-                
-                report += `Day ${index + 1}: ${dayTitle} - ${status}\n`;
-                if (notes.trim()) {
-                    report += `Notes: ${notes}\n`;
-                }
-                report += "\n";
-            });
-            
-            // Create download
-            const blob = new Blob([report], { type: 'text/plain' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'leetcode-progress-report.txt';
-            a.click();
-            window.URL.revokeObjectURL(url);
-        }
-
-        function generateReport() {
-            const report = {
-                date: new Date().toISOString().split('T')[0],
-                stats: {
-                    completedProblems,
-                    currentStreak,
-                    contestsJoined,
-                    patternsLearned: Array.from(patternsLearned)
-                },
-                completionRate: ((completedProblems / 100) * 100).toFixed(1) + '%'
-            };
-            
-            alert(`📈 Progress Report (${report.date}):\n\n` +
-                  `✅ Completion Rate: ${report.completionRate}\n` +
-                  `📚 Problems Solved: ${completedProblems}/100\n` +
-                  `🔥 Current Streak: ${currentStreak} days\n` +
-                  `🏆 Contests: ${contestsJoined}\n` +
-                  `🧠 Patterns: ${patternsLearned.size}/15`);
-        }
-
-        function saveData() {
-            const data = {
-                completedProblems,
-                currentStreak,
-                contestsJoined,
-                patternsLearned: Array.from(patternsLearned),
-                dayStatuses: {},
-                problemStates: {},
-                notes: {}
-            };
-            
-            // Save day statuses
-            document.querySelectorAll('.day-card').forEach((card, index) => {
-                const status = card.querySelector('.day-status').textContent;
-                const notes = card.querySelector('.notes-textarea').value;
-                data.dayStatuses[index] = status;
-                data.notes[index] = notes;
-            });
-            
-            // Save problem states
-            document.querySelectorAll('.problem-checkbox').forEach((checkbox, index) => {
-                data.problemStates[index] = checkbox.checked;
-            });
-            
-            localStorage.setItem('leetcodeProgress', JSON.stringify(data));
-        }
-
-        function loadSavedData() {
-            const savedData = localStorage.getItem('leetcodeProgress');
-            if (!savedData) return;
-            
-            try {
-                const data = JSON.parse(savedData);
-                completedProblems = data.completedProblems || 0;
-                currentStreak = data.currentStreak || 0;
-                contestsJoined = data.contestsJoined || 0;
-                patternsLearned = new Set(data.patternsLearned || []);
-                
-                // Restore day statuses and notes
-                if (data.dayStatuses) {
-                    Object.keys(data.dayStatuses).forEach(index => {
-                        const dayCard = document.querySelectorAll('.day-card')[index];
-                        if (dayCard) {
-                            const statusElement = dayCard.querySelector('.day-status');
-                            const status = data.dayStatuses[index];
-                            
-                            // Remove all status classes
-                            statusElement.classList.remove('status-pending', 'status-completed', 'status-skipped');
-                            
-                            // Add correct status class
-                            if (status === 'Completed') {
-                                statusElement.classList.add('status-completed');
-                            } else if (status === 'Skipped') {
-                                statusElement.classList.add('status-skipped');
-                            } else {
-                                statusElement.classList.add('status-pending');
-                            }
-                            statusElement.textContent = status;
-                        }
-                    });
-                }
-                
-                // Restore notes
-                if (data.notes) {
-                    Object.keys(data.notes).forEach(index => {
-                        const dayCard = document.querySelectorAll('.day-card')[index];
-                        if (dayCard) {
-                            const textarea = dayCard.querySelector('.notes-textarea');
-                            textarea.value = data.notes[index] || '';
-                        }
-                    });
-                }
-                
-                // Restore problem states
-                if (data.problemStates) {
-                    Object.keys(data.problemStates).forEach(index => {
-                        const checkbox = document.querySelectorAll('.problem-checkbox')[index];
-                        if (checkbox) {
-                            checkbox.checked = data.problemStates[index];
-                            const problemItem = checkbox.closest('.problem-item');
-                            if (checkbox.checked) {
-                                problemItem.style.opacity = '0.7';
-                                problemItem.style.textDecoration = 'line-through';
-                            }
-                        }
-                    });
-                }
-            } catch (error) {
-                console.error('Error loading saved data:', error);
-            }
-        }
-
-        // Auto-save every 30 seconds
-        setInterval(saveData, 30000);
-    </script>
-</body>
-</html>
+                <div class="week-header
