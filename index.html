@@ -327,6 +327,26 @@
             background: #e74c3c;
         }
 
+        .debug-section {
+            padding: 20px;
+            margin: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+        }
+
+        .debug-log {
+            background: #000;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 0.9em;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
         @media (max-width: 768px) {
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
@@ -363,6 +383,14 @@
             </div>
             <h1>🚀 30-Day LeetCode Mastery</h1>
             <p>Track your progress, build patterns, boost your profile!</p>
+        </div>
+
+        <!-- Debug Section -->
+        <div class="debug-section">
+            <h3>🔧 Debug Console</h3>
+            <div class="debug-log" id="debugLog">Initializing Firebase connection...</div>
+            <button onclick="clearDebugLog()" style="margin-top: 10px; padding: 5px 10px;">Clear Log</button>
+            <button onclick="testFirebaseConnection()" style="margin-top: 10px; padding: 5px 10px;">Test Connection</button>
         </div>
 
         <!-- Stats Dashboard -->
@@ -406,517 +434,9 @@
 
         <!-- Progress Tracking -->
         <div class="progress-section">
+            <!-- Week 1 -->
             <div class="week-section">
-                <div class="week-header">Week 3: Trees, Binary Search & Heaps</div>
-                <div style="padding: 20px; text-align: center; color: #666;">
-                    <p>📅 Days 15-21: Binary Trees, BSTs, Binary Search, Heaps, Tries</p>
-                    <p><em>This section will auto-populate as you progress through the weeks</em></p>
-                </div>
-            </div>
-
-            <div class="week-section">
-                <div class="week-header">Week 4: Graphs, Dynamic Programming & Advanced Patterns</div>
-                <div style="padding: 20px; text-align: center; color: #666;">
-                    <p>📅 Days 22-30: Graph Algorithms, DP, Backtracking, Mock Interviews</p>
-                    <p><em>Final week focuses on FAANG-level problems and interview simulation</em></p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Export Section -->
-        <div class="export-section">
-            <h2>📊 Export Your Progress</h2>
-            <button class="export-btn" onclick="exportProgress()">📋 Export as Text</button>
-            <button class="export-btn" onclick="generateReport()">📈 Generate Report</button>
-            <button class="export-btn" onclick="syncToFirebase()">☁️ Sync to Cloud</button>
-        </div>
-    </div>
-
-    <!-- Firebase SDK -->
-    <script type="module">
-        // Import Firebase modules
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-        import { getFirestore, doc, setDoc, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-        import { getAnalytics } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js';
-
-        // Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyBUxosEm2PoOjr6cabBHgopew3w81dbjAk",
-            authDomain: "leetcode-tracker-c79ce.firebaseapp.com",
-            projectId: "leetcode-tracker-c79ce",
-            storageBucket: "leetcode-tracker-c79ce.firebasestorage.app",
-            messagingSenderId: "36537045265",
-            appId: "1:36537045265:web:4b308443700e6a2c603cb0",
-            measurementId: "G-28FJGKLD69"
-        };
-
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const analytics = getAnalytics(app);
-        const provider = new GoogleAuthProvider();
-
-        // Global variables
-        window.auth = auth;
-        window.db = db;
-        window.currentUser = null;
-        window.unsubscribe = null;
-
-        // Auth state observer
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                window.currentUser = user;
-                document.getElementById('signInBtn').style.display = 'none';
-                document.getElementById('signOutBtn').style.display = 'inline-block';
-                document.getElementById('userInfo').style.display = 'inline-block';
-                document.getElementById('userInfo').textContent = `👋 ${user.displayName || user.email}`;
-                
-                // Load user data from Firestore
-                loadFirebaseData();
-                
-                // Set up real-time listener
-                setupRealtimeListener();
-            } else {
-                window.currentUser = null;
-                document.getElementById('signInBtn').style.display = 'inline-block';
-                document.getElementById('signOutBtn').style.display = 'none';
-                document.getElementById('userInfo').style.display = 'none';
-                
-                // Clean up listener
-                if (window.unsubscribe) {
-                    window.unsubscribe();
-                    window.unsubscribe = null;
-                }
-                
-                // Load local data as fallback
-                loadLocalData();
-            }
-        });
-
-        // Google Sign In
-        window.signInWithGoogle = async () => {
-            try {
-                showLoading(true);
-                const result = await signInWithPopup(auth, provider);
-                showSyncStatus('🎉 Successfully signed in!', 'success');
-            } catch (error) {
-                console.error('Sign in error:', error);
-                showSyncStatus('❌ Sign in failed', 'error');
-            } finally {
-                showLoading(false);
-            }
-        };
-
-        // Sign Out
-        window.signOutUser = async () => {
-            try {
-                await signOut(auth);
-                showSyncStatus('👋 Successfully signed out', 'success');
-                // Clear local data
-                localStorage.removeItem('leetcodeProgress');
-                location.reload();
-            } catch (error) {
-                console.error('Sign out error:', error);
-                showSyncStatus('❌ Sign out failed', 'error');
-            }
-        };
-
-        // Load data from Firebase
-        async function loadFirebaseData() {
-            if (!window.currentUser) return;
-            
-            try {
-                showLoading(true);
-                const docRef = doc(db, 'users', window.currentUser.uid);
-                const docSnap = await getDoc(docRef);
-                
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    applyDataToUI(data);
-                    showSyncStatus('✅ Data loaded from cloud', 'success');
-                } else {
-                    console.log('No cloud data found, using local data');
-                    loadLocalData();
-                }
-            } catch (error) {
-                console.error('Error loading from Firebase:', error);
-                showSyncStatus('⚠️ Cloud sync failed, using local data', 'error');
-                loadLocalData();
-            } finally {
-                showLoading(false);
-            }
-        }
-
-        // Setup real-time listener
-        function setupRealtimeListener() {
-            if (!window.currentUser) return;
-            
-            const docRef = doc(db, 'users', window.currentUser.uid);
-            window.unsubscribe = onSnapshot(docRef, (doc) => {
-                if (doc.exists()) {
-                    const data = doc.data();
-                    // Only update if data is different (to avoid infinite loops)
-                    if (JSON.stringify(data) !== JSON.stringify(getCurrentData())) {
-                        applyDataToUI(data);
-                        showSyncStatus('🔄 Data synced', 'success');
-                    }
-                }
-            });
-        }
-
-        // Save to Firebase
-        window.saveToFirebase = async (data = null) => {
-            if (!window.currentUser) {
-                saveToLocal();
-                return;
-            }
-            
-            try {
-                const dataToSave = data || getCurrentData();
-                const docRef = doc(db, 'users', window.currentUser.uid);
-                await setDoc(docRef, {
-                    ...dataToSave,
-                    lastUpdated: new Date().toISOString()
-                }, { merge: true });
-                
-                // Also save locally as backup
-                saveToLocal(dataToSave);
-                
-            } catch (error) {
-                console.error('Error saving to Firebase:', error);
-                showSyncStatus('⚠️ Cloud sync failed', 'error');
-                // Fallback to local storage
-                saveToLocal();
-            }
-        };
-
-        // Manual sync function
-        window.syncToFirebase = async () => {
-            if (!window.currentUser) {
-                alert('Please sign in to sync to cloud!');
-                return;
-            }
-            
-            showLoading(true);
-            await window.saveToFirebase();
-            showLoading(false);
-            showSyncStatus('☁️ Synced to cloud!', 'success');
-        };
-    </script>
-
-    <script>
-        // Progress tracking variables
-        let completedProblems = 0;
-        let currentStreak = 0;
-        let contestsJoined = 0;
-        let patternsLearned = new Set();
-        let saveTimeout = null;
-
-        // Initialize app
-        window.onload = function() {
-            // Auth state will handle data loading
-            updateStats();
-            setupEventListeners();
-        };
-
-        // Setup event listeners
-        function setupEventListeners() {
-            // Problem checkboxes
-            const checkboxes = document.querySelectorAll('.problem-checkbox');
-            checkboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', function() {
-                    const problemItem = this.closest('.problem-item');
-                    const patternTag = problemItem.querySelector('.pattern-tag');
-                    
-                    if (this.checked) {
-                        completedProblems++;
-                        problemItem.style.opacity = '0.7';
-                        problemItem.style.textDecoration = 'line-through';
-                        
-                        if (patternTag) {
-                            patternsLearned.add(patternTag.textContent);
-                        }
-                    } else {
-                        completedProblems--;
-                        problemItem.style.opacity = '1';
-                        problemItem.style.textDecoration = 'none';
-                    }
-                    
-                    updateStats();
-                    debouncedSave();
-                });
-            });
-
-            // Notes textareas
-            const textareas = document.querySelectorAll('.notes-textarea');
-            textareas.forEach(textarea => {
-                textarea.addEventListener('input', debouncedSave);
-            });
-        }
-
-        // Debounced save function
-        function debouncedSave() {
-            clearTimeout(saveTimeout);
-            saveTimeout = setTimeout(() => {
-                if (window.saveToFirebase) {
-                    window.saveToFirebase();
-                } else {
-                    saveToLocal();
-                }
-            }, 1000);
-        }
-
-        // Toggle day status
-        function toggleDayStatus(element) {
-            const statuses = ['status-pending', 'status-completed', 'status-skipped'];
-            const statusTexts = ['Pending', 'Completed', 'Skipped'];
-            
-            let currentIndex = 0;
-            statuses.forEach((status, index) => {
-                if (element.classList.contains(status)) {
-                    currentIndex = index;
-                }
-            });
-            
-            element.classList.remove(statuses[currentIndex]);
-            const nextIndex = (currentIndex + 1) % statuses.length;
-            element.classList.add(statuses[nextIndex]);
-            element.textContent = statusTexts[nextIndex];
-            
-            updateStreak();
-            debouncedSave();
-        }
-
-        // Update statistics
-        function updateStats() {
-            document.getElementById('completedProblems').textContent = completedProblems;
-            document.getElementById('currentStreak').textContent = currentStreak;
-            document.getElementById('contestsJoined').textContent = contestsJoined;
-            document.getElementById('patternsLearned').textContent = patternsLearned.size;
-        }
-
-        // Update streak calculation
-        function updateStreak() {
-            const completedDays = document.querySelectorAll('.status-completed').length;
-            currentStreak = completedDays;
-            updateStats();
-        }
-
-        // Get current data state
-        function getCurrentData() {
-            const data = {
-                completedProblems,
-                currentStreak,
-                contestsJoined,
-                patternsLearned: Array.from(patternsLearned),
-                dayStatuses: {},
-                problemStates: {},
-                notes: {},
-                contests: {}
-            };
-            
-            // Save day statuses and notes
-            document.querySelectorAll('.day-card').forEach((card, index) => {
-                const status = card.querySelector('.day-status').textContent;
-                const notes = card.querySelector('.notes-textarea').value;
-                data.dayStatuses[index] = status;
-                data.notes[index] = notes;
-            });
-            
-            // Save problem states
-            document.querySelectorAll('.problem-checkbox').forEach((checkbox, index) => {
-                data.problemStates[index] = checkbox.checked;
-            });
-
-            // Save contest data
-            const contestInputs = document.querySelectorAll('.contest-card input');
-            contestInputs.forEach((input, index) => {
-                data.contests[index] = input.value;
-            });
-            
-            return data;
-        }
-
-        // Apply data to UI
-        function applyDataToUI(data) {
-            if (!data) return;
-            
-            completedProblems = data.completedProblems || 0;
-            currentStreak = data.currentStreak || 0;
-            contestsJoined = data.contestsJoined || 0;
-            patternsLearned = new Set(data.patternsLearned || []);
-            
-            // Restore day statuses and notes
-            if (data.dayStatuses) {
-                Object.keys(data.dayStatuses).forEach(index => {
-                    const dayCard = document.querySelectorAll('.day-card')[index];
-                    if (dayCard) {
-                        const statusElement = dayCard.querySelector('.day-status');
-                        const status = data.dayStatuses[index];
-                        
-                        statusElement.classList.remove('status-pending', 'status-completed', 'status-skipped');
-                        
-                        if (status === 'Completed') {
-                            statusElement.classList.add('status-completed');
-                        } else if (status === 'Skipped') {
-                            statusElement.classList.add('status-skipped');
-                        } else {
-                            statusElement.classList.add('status-pending');
-                        }
-                        statusElement.textContent = status;
-                    }
-                });
-            }
-            
-            // Restore notes
-            if (data.notes) {
-                Object.keys(data.notes).forEach(index => {
-                    const dayCard = document.querySelectorAll('.day-card')[index];
-                    if (dayCard) {
-                        const textarea = dayCard.querySelector('.notes-textarea');
-                        if (textarea) textarea.value = data.notes[index] || '';
-                    }
-                });
-            }
-            
-            // Restore problem states
-            if (data.problemStates) {
-                Object.keys(data.problemStates).forEach(index => {
-                    const checkbox = document.querySelectorAll('.problem-checkbox')[index];
-                    if (checkbox) {
-                        checkbox.checked = data.problemStates[index];
-                        const problemItem = checkbox.closest('.problem-item');
-                        if (checkbox.checked) {
-                            problemItem.style.opacity = '0.7';
-                            problemItem.style.textDecoration = 'line-through';
-                        }
-                    }
-                });
-            }
-
-            // Restore contest data
-            if (data.contests) {
-                const contestInputs = document.querySelectorAll('.contest-card input');
-                Object.keys(data.contests).forEach(index => {
-                    const input = contestInputs[index];
-                    if (input) input.value = data.contests[index] || '';
-                });
-            }
-            
-            updateStats();
-        }
-
-        // Save to local storage (fallback)
-        function saveToLocal(data = null) {
-            const dataToSave = data || getCurrentData();
-            localStorage.setItem('leetcodeProgress', JSON.stringify(dataToSave));
-        }
-
-        // Load from local storage
-        function loadLocalData() {
-            const savedData = localStorage.getItem('leetcodeProgress');
-            if (savedData) {
-                try {
-                    const data = JSON.parse(savedData);
-                    applyDataToUI(data);
-                } catch (error) {
-                    console.error('Error loading local data:', error);
-                }
-            }
-        }
-
-        // Contest data save
-        function saveContestData() {
-            debouncedSave();
-        }
-
-        // Export progress
-        function exportProgress() {
-            let report = "🚀 30-Day LeetCode Progress Report\n";
-            report += "=====================================\n\n";
-            report += `📊 Statistics:\n`;
-            report += `• Problems Solved: ${completedProblems}\n`;
-            report += `• Current Streak: ${currentStreak} days\n`;
-            report += `• Contests Joined: ${contestsJoined}\n`;
-            report += `• Patterns Learned: ${patternsLearned.size}\n\n`;
-            
-            report += "📚 Patterns Mastered:\n";
-            patternsLearned.forEach(pattern => {
-                report += `• ${pattern}\n`;
-            });
-            
-            report += "\n📝 Daily Progress:\n";
-            const dayCards = document.querySelectorAll('.day-card');
-            dayCards.forEach((card, index) => {
-                const dayTitle = card.querySelector('.day-title').textContent;
-                const status = card.querySelector('.day-status').textContent;
-                const notes = card.querySelector('.notes-textarea').value;
-                
-                report += `Day ${index + 1}: ${dayTitle} - ${status}\n`;
-                if (notes.trim()) {
-                    report += `Notes: ${notes}\n`;
-                }
-                report += "\n";
-            });
-            
-            const blob = new Blob([report], { type: 'text/plain' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'leetcode-progress-report.txt';
-            a.click();
-            window.URL.revokeObjectURL(url);
-        }
-
-        // Generate progress report
-        function generateReport() {
-            const report = {
-                date: new Date().toISOString().split('T')[0],
-                stats: {
-                    completedProblems,
-                    currentStreak,
-                    contestsJoined,
-                    patternsLearned: Array.from(patternsLearned)
-                },
-                completionRate: ((completedProblems / 100) * 100).toFixed(1) + '%'
-            };
-            
-            alert(`📈 Progress Report (${report.date}):\n\n` +
-                  `✅ Completion Rate: ${report.completionRate}\n` +
-                  `📚 Problems Solved: ${completedProblems}/100\n` +
-                  `🔥 Current Streak: ${currentStreak} days\n` +
-                  `🏆 Contests: ${contestsJoined}\n` +
-                  `🧠 Patterns: ${patternsLearned.size}/15`);
-        }
-
-        // Utility functions
-        function showLoading(show) {
-            document.getElementById('loading').style.display = show ? 'block' : 'none';
-        }
-
-        function showSyncStatus(message, type = 'success') {
-            const statusEl = document.getElementById('syncStatus');
-            statusEl.textContent = message;
-            statusEl.className = `sync-status ${type} show`;
-            
-            setTimeout(() => {
-                statusEl.classList.remove('show');
-            }, 3000);
-        }
-
-        // Auto-save every 30 seconds
-        setInterval(() => {
-            if (window.saveToFirebase) {
-                window.saveToFirebase();
-            } else {
-                saveToLocal();
-            }
-        }, 30000);
-    </script>
-</body>
-</html>">Week 1: Foundation Patterns (Arrays, Hashing, Two Pointers)</div>
+                <div class="week-header">Week 1: Foundation Patterns (Arrays, Hashing, Two Pointers)</div>
                 <div class="day-grid">
                     <div class="day-card" data-day="1">
                         <div class="day-header">
@@ -1226,6 +746,676 @@
                 </div>
             </div>
 
-            <!-- Week 3 & 4 Preview Cards -->
+            <!-- Week 3 -->
             <div class="week-section">
-                <div class="week-header
+                <div class="week-header">Week 3: Trees, Binary Search & Heaps</div>
+                <div style="padding: 20px; text-align: center; color: #666;">
+                    <p>📅 Days 15-21: Binary Trees, BSTs, Binary Search, Heaps, Tries</p>
+                    <p><em>This section will auto-populate as you progress through the weeks</em></p>
+                </div>
+            </div>
+
+            <!-- Week 4 -->
+            <div class="week-section">
+                <div class="week-header">Week 4: Graphs, Dynamic Programming & Advanced Patterns</div>
+                <div style="padding: 20px; text-align: center; color: #666;">
+                    <p>📅 Days 22-30: Graph Algorithms, DP, Backtracking, Mock Interviews</p>
+                    <p><em>Final week focuses on FAANG-level problems and interview simulation</em></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Export Section -->
+        <div class="export-section">
+            <h2>📊 Export Your Progress</h2>
+            <button class="export-btn" onclick="exportProgress()">📋 Export as Text</button>
+            <button class="export-btn" onclick="generateReport()">📈 Generate Report</button>
+            <button class="export-btn" onclick="syncToFirebase()">☁️ Sync to Cloud</button>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { getAnalytics } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js';
+
+        // Debug logging function
+        function debugLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logElement = document.getElementById('debugLog');
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : 'ℹ️';
+            logElement.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(`Firebase Debug: ${message}`);
+        }
+
+        // Firebase configuration (your existing config)
+        const firebaseConfig = {
+            apiKey: "AIzaSyBUxosEm2PoOjr6cabBHgopew3w81dbjAk",
+            authDomain: "leetcode-tracker-c79ce.firebaseapp.com",
+            projectId: "leetcode-tracker-c79ce",
+            storageBucket: "leetcode-tracker-c79ce.firebasestorage.app",
+            messagingSenderId: "36537045265",
+            appId: "1:36537045265:web:4b308443700e6a2c603cb0",
+            measurementId: "G-28FJGKLD69"
+        };
+
+        // Initialize Firebase with error handling
+        let app, auth, db, analytics;
+        try {
+            debugLog('Initializing Firebase...');
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            analytics = getAnalytics(app);
+            debugLog('Firebase initialized successfully', 'success');
+            
+            // Set up auth persistence
+            auth.settings = {
+                appVerificationDisabledForTesting: false
+            };
+            
+        } catch (error) {
+            debugLog(`Firebase initialization failed: ${error.message}`, 'error');
+            console.error('Firebase init error:', error);
+        }
+
+        const provider = new GoogleAuthProvider();
+        provider.addScope('profile');
+        provider.addScope('email');
+
+        // Global variables
+        window.auth = auth;
+        window.db = db;
+        window.currentUser = null;
+        window.unsubscribe = null;
+        window.retryCount = 0;
+        window.maxRetries = 3;
+
+        // Enhanced error handling function
+        function handleFirebaseError(error, context = '') {
+            debugLog(`Error in ${context}: ${error.code} - ${error.message}`, 'error');
+            
+            let userMessage = 'An error occurred. ';
+            switch (error.code) {
+                case 'permission-denied':
+                    userMessage += 'Permission denied. Check Firestore rules.';
+                    break;
+                case 'unavailable':
+                    userMessage += 'Service temporarily unavailable. Retrying...';
+                    break;
+                case 'unauthenticated':
+                    userMessage += 'Please sign in again.';
+                    break;
+                case 'network-request-failed':
+                    userMessage += 'Network error. Check your connection.';
+                    break;
+                default:
+                    userMessage += error.message;
+            }
+            
+            showSyncStatus(userMessage, 'error');
+            return userMessage;
+        }
+
+        // Retry mechanism for failed operations
+        async function retryOperation(operation, maxRetries = 3) {
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    debugLog(`Attempting operation (try ${i + 1}/${maxRetries})`);
+                    const result = await operation();
+                    debugLog('Operation succeeded', 'success');
+                    return result;
+                } catch (error) {
+                    debugLog(`Operation failed (try ${i + 1}): ${error.message}`, 'warning');
+                    if (i === maxRetries - 1) throw error;
+                    await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))); // Exponential backoff
+                }
+            }
+        }
+
+        // Test Firebase connection
+        window.testFirebaseConnection = async () => {
+            debugLog('Testing Firebase connection...');
+            try {
+                if (!auth || !db) {
+                    throw new Error('Firebase not properly initialized');
+                }
+                
+                debugLog('Auth state: ' + (auth.currentUser ? 'Signed in' : 'Not signed in'));
+                
+                if (auth.currentUser) {
+                    const testDoc = doc(db, 'test', 'connection');
+                    await setDoc(testDoc, { 
+                        timestamp: new Date(),
+                        test: true 
+                    });
+                    debugLog('Write test successful', 'success');
+                    
+                    const docSnap = await getDoc(testDoc);
+                    if (docSnap.exists()) {
+                        debugLog('Read test successful', 'success');
+                    } else {
+                        debugLog('Read test failed - document not found', 'error');
+                    }
+                } else {
+                    debugLog('Cannot test Firestore without authentication', 'warning');
+                }
+                
+            } catch (error) {
+                handleFirebaseError(error, 'connection test');
+            }
+        };
+
+        // Clear debug log
+        window.clearDebugLog = () => {
+            document.getElementById('debugLog').textContent = 'Debug log cleared.\n';
+        };
+
+        // Enhanced auth state observer
+        onAuthStateChanged(auth, (user) => {
+            debugLog(`Auth state changed: ${user ? 'User signed in' : 'User signed out'}`);
+            
+            if (user) {
+                window.currentUser = user;
+                debugLog(`User: ${user.displayName || user.email} (${user.uid})`, 'success');
+                
+                document.getElementById('signInBtn').style.display = 'none';
+                document.getElementById('signOutBtn').style.display = 'inline-block';
+                document.getElementById('userInfo').style.display = 'inline-block';
+                document.getElementById('userInfo').textContent = `👋 ${user.displayName || user.email}`;
+                
+                // Load user data from Firestore with retry
+                loadFirebaseData();
+                
+                // Set up real-time listener
+                setupRealtimeListener();
+            } else {
+                window.currentUser = null;
+                debugLog('No user signed in');
+                
+                document.getElementById('signInBtn').style.display = 'inline-block';
+                document.getElementById('signOutBtn').style.display = 'none';
+                document.getElementById('userInfo').style.display = 'none';
+                
+                // Clean up listener
+                if (window.unsubscribe) {
+                    window.unsubscribe();
+                    window.unsubscribe = null;
+                    debugLog('Firestore listener cleaned up');
+                }
+                
+                // Load local data as fallback
+                loadLocalData();
+            }
+        });
+
+        // Enhanced Google Sign In
+        window.signInWithGoogle = async () => {
+            try {
+                debugLog('Starting Google sign-in...');
+                showLoading(true);
+                
+                const result = await signInWithPopup(auth, provider);
+                debugLog(`Sign-in successful: ${result.user.email}`, 'success');
+                showSyncStatus('🎉 Successfully signed in!', 'success');
+                
+            } catch (error) {
+                handleFirebaseError(error, 'sign-in');
+            } finally {
+                showLoading(false);
+            }
+        };
+
+        // Enhanced Sign Out
+        window.signOutUser = async () => {
+            try {
+                debugLog('Starting sign-out...');
+                await signOut(auth);
+                debugLog('Sign-out successful', 'success');
+                showSyncStatus('👋 Successfully signed out', 'success');
+                
+                // Clear local data
+                localStorage.removeItem('leetcodeProgress');
+                setTimeout(() => location.reload(), 1000);
+                
+            } catch (error) {
+                handleFirebaseError(error, 'sign-out');
+            }
+        };
+
+        // Enhanced load data from Firebase
+        async function loadFirebaseData() {
+            if (!window.currentUser) {
+                debugLog('No user signed in, cannot load Firebase data', 'warning');
+                return;
+            }
+            
+            try {
+                debugLog('Loading data from Firebase...');
+                showLoading(true);
+                
+                await retryOperation(async () => {
+                    const docRef = doc(db, 'users', window.currentUser.uid);
+                    const docSnap = await getDoc(docRef);
+                    
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        debugLog('Data loaded from Firebase', 'success');
+                        applyDataToUI(data);
+                        showSyncStatus('✅ Data loaded from cloud', 'success');
+                    } else {
+                        debugLog('No cloud data found, using local data', 'warning');
+                        loadLocalData();
+                    }
+                });
+                
+            } catch (error) {
+                handleFirebaseError(error, 'loading Firebase data');
+                loadLocalData();
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Enhanced real-time listener
+        function setupRealtimeListener() {
+            if (!window.currentUser) {
+                debugLog('No user signed in, cannot setup listener', 'warning');
+                return;
+            }
+            
+            try {
+                debugLog('Setting up real-time listener...');
+                const docRef = doc(db, 'users', window.currentUser.uid);
+                
+                window.unsubscribe = onSnapshot(docRef, (doc) => {
+                    if (doc.exists()) {
+                        const data = doc.data();
+                        debugLog('Real-time data update received');
+                        
+                        // Only update if data is different (to avoid infinite loops)
+                        if (JSON.stringify(data) !== JSON.stringify(getCurrentData())) {
+                            applyDataToUI(data);
+                            showSyncStatus('🔄 Data synced', 'success');
+                        }
+                    }
+                }, (error) => {
+                    handleFirebaseError(error, 'real-time listener');
+                });
+                
+                debugLog('Real-time listener setup successful', 'success');
+                
+            } catch (error) {
+                handleFirebaseError(error, 'setting up listener');
+            }
+        }
+
+        // Enhanced save to Firebase
+        window.saveToFirebase = async (data = null) => {
+            if (!window.currentUser) {
+                debugLog('No user signed in, saving locally only', 'warning');
+                saveToLocal();
+                return;
+            }
+            
+            try {
+                const dataToSave = data || getCurrentData();
+                debugLog('Saving data to Firebase...');
+                
+                await retryOperation(async () => {
+                    const docRef = doc(db, 'users', window.currentUser.uid);
+                    await setDoc(docRef, {
+                        ...dataToSave,
+                        lastUpdated: new Date().toISOString(),
+                        version: Date.now() // Add version for conflict resolution
+                    }, { merge: true });
+                });
+                
+                debugLog('Data saved to Firebase successfully', 'success');
+                
+                // Also save locally as backup
+                saveToLocal(dataToSave);
+                
+            } catch (error) {
+                handleFirebaseError(error, 'saving to Firebase');
+                // Fallback to local storage
+                saveToLocal();
+            }
+        };
+
+        // Manual sync function with enhanced feedback
+        window.syncToFirebase = async () => {
+            if (!window.currentUser) {
+                alert('Please sign in to sync to cloud!');
+                return;
+            }
+            
+            debugLog('Manual sync initiated...');
+            showLoading(true);
+            
+            try {
+                await window.saveToFirebase();
+                showSyncStatus('☁️ Synced to cloud!', 'success');
+                debugLog('Manual sync completed', 'success');
+            } catch (error) {
+                debugLog('Manual sync failed', 'error');
+            } finally {
+                showLoading(false);
+            }
+        };
+    </script>
+
+    <script>
+        // Progress tracking variables
+        let completedProblems = 0;
+        let currentStreak = 0;
+        let contestsJoined = 0;
+        let patternsLearned = new Set();
+        let saveTimeout = null;
+
+        // Initialize app
+        window.onload = function() {
+            updateStats();
+            setupEventListeners();
+        };
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Problem checkboxes
+            const checkboxes = document.querySelectorAll('.problem-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const problemItem = this.closest('.problem-item');
+                    const patternTag = problemItem.querySelector('.pattern-tag');
+                    
+                    if (this.checked) {
+                        completedProblems++;
+                        problemItem.style.opacity = '0.7';
+                        problemItem.style.textDecoration = 'line-through';
+                        
+                        if (patternTag) {
+                            patternsLearned.add(patternTag.textContent);
+                        }
+                    } else {
+                        completedProblems--;
+                        problemItem.style.opacity = '1';
+                        problemItem.style.textDecoration = 'none';
+                    }
+                    
+                    updateStats();
+                    debouncedSave();
+                });
+            });
+
+            // Notes textareas
+            const textareas = document.querySelectorAll('.notes-textarea');
+            textareas.forEach(textarea => {
+                textarea.addEventListener('input', debouncedSave);
+            });
+        }
+
+        // Debounced save function
+        function debouncedSave() {
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => {
+                if (window.saveToFirebase) {
+                    window.saveToFirebase();
+                } else {
+                    saveToLocal();
+                }
+            }, 1000);
+        }
+
+        // Toggle day status
+        function toggleDayStatus(element) {
+            const statuses = ['status-pending', 'status-completed', 'status-skipped'];
+            const statusTexts = ['Pending', 'Completed', 'Skipped'];
+            
+            let currentIndex = 0;
+            statuses.forEach((status, index) => {
+                if (element.classList.contains(status)) {
+                    currentIndex = index;
+                }
+            });
+            
+            element.classList.remove(statuses[currentIndex]);
+            const nextIndex = (currentIndex + 1) % statuses.length;
+            element.classList.add(statuses[nextIndex]);
+            element.textContent = statusTexts[nextIndex];
+            
+            updateStreak();
+            debouncedSave();
+        }
+
+        // Update statistics
+        function updateStats() {
+            document.getElementById('completedProblems').textContent = completedProblems;
+            document.getElementById('currentStreak').textContent = currentStreak;
+            document.getElementById('contestsJoined').textContent = contestsJoined;
+            document.getElementById('patternsLearned').textContent = patternsLearned.size;
+        }
+
+        // Update streak calculation
+        function updateStreak() {
+            const completedDays = document.querySelectorAll('.status-completed').length;
+            currentStreak = completedDays;
+            updateStats();
+        }
+
+        // Get current data state
+        function getCurrentData() {
+            const data = {
+                completedProblems,
+                currentStreak,
+                contestsJoined,
+                patternsLearned: Array.from(patternsLearned),
+                dayStatuses: {},
+                problemStates: {},
+                notes: {},
+                contests: {}
+            };
+            
+            // Save day statuses and notes
+            document.querySelectorAll('.day-card').forEach((card, index) => {
+                const status = card.querySelector('.day-status').textContent;
+                const notes = card.querySelector('.notes-textarea').value;
+                data.dayStatuses[index] = status;
+                data.notes[index] = notes;
+            });
+            
+            // Save problem states
+            document.querySelectorAll('.problem-checkbox').forEach((checkbox, index) => {
+                data.problemStates[index] = checkbox.checked;
+            });
+
+            // Save contest data
+            const contestInputs = document.querySelectorAll('.contest-card input');
+            contestInputs.forEach((input, index) => {
+                data.contests[index] = input.value;
+            });
+            
+            return data;
+        }
+
+        // Apply data to UI
+        function applyDataToUI(data) {
+            if (!data) return;
+            
+            completedProblems = data.completedProblems || 0;
+            currentStreak = data.currentStreak || 0;
+            contestsJoined = data.contestsJoined || 0;
+            patternsLearned = new Set(data.patternsLearned || []);
+            
+            // Restore day statuses and notes
+            if (data.dayStatuses) {
+                Object.keys(data.dayStatuses).forEach(index => {
+                    const dayCard = document.querySelectorAll('.day-card')[index];
+                    if (dayCard) {
+                        const statusElement = dayCard.querySelector('.day-status');
+                        const status = data.dayStatuses[index];
+                        
+                        statusElement.classList.remove('status-pending', 'status-completed', 'status-skipped');
+                        
+                        if (status === 'Completed') {
+                            statusElement.classList.add('status-completed');
+                        } else if (status === 'Skipped') {
+                            statusElement.classList.add('status-skipped');
+                        } else {
+                            statusElement.classList.add('status-pending');
+                        }
+                        statusElement.textContent = status;
+                    }
+                });
+            }
+            
+            // Restore notes
+            if (data.notes) {
+                Object.keys(data.notes).forEach(index => {
+                    const dayCard = document.querySelectorAll('.day-card')[index];
+                    if (dayCard) {
+                        const textarea = dayCard.querySelector('.notes-textarea');
+                        if (textarea) textarea.value = data.notes[index] || '';
+                    }
+                });
+            }
+            
+            // Restore problem states
+            if (data.problemStates) {
+                Object.keys(data.problemStates).forEach(index => {
+                    const checkbox = document.querySelectorAll('.problem-checkbox')[index];
+                    if (checkbox) {
+                        checkbox.checked = data.problemStates[index];
+                        const problemItem = checkbox.closest('.problem-item');
+                        if (checkbox.checked) {
+                            problemItem.style.opacity = '0.7';
+                            problemItem.style.textDecoration = 'line-through';
+                        }
+                    }
+                });
+            }
+
+            // Restore contest data
+            if (data.contests) {
+                const contestInputs = document.querySelectorAll('.contest-card input');
+                Object.keys(data.contests).forEach(index => {
+                    const input = contestInputs[index];
+                    if (input) input.value = data.contests[index] || '';
+                });
+            }
+            
+            updateStats();
+        }
+
+        // Save to local storage (fallback)
+        function saveToLocal(data = null) {
+            const dataToSave = data || getCurrentData();
+            localStorage.setItem('leetcodeProgress', JSON.stringify(dataToSave));
+        }
+
+        // Load from local storage
+        function loadLocalData() {
+            const savedData = localStorage.getItem('leetcodeProgress');
+            if (savedData) {
+                try {
+                    const data = JSON.parse(savedData);
+                    applyDataToUI(data);
+                } catch (error) {
+                    console.error('Error loading local data:', error);
+                }
+            }
+        }
+
+        // Contest data save
+        function saveContestData() {
+            debouncedSave();
+        }
+
+        // Export progress
+        function exportProgress() {
+            let report = "🚀 30-Day LeetCode Progress Report\n";
+            report += "=====================================\n\n";
+            report += `📊 Statistics:\n`;
+            report += `• Problems Solved: ${completedProblems}\n`;
+            report += `• Current Streak: ${currentStreak} days\n`;
+            report += `• Contests Joined: ${contestsJoined}\n`;
+            report += `• Patterns Learned: ${patternsLearned.size}\n\n`;
+            
+            report += "📚 Patterns Mastered:\n";
+            patternsLearned.forEach(pattern => {
+                report += `• ${pattern}\n`;
+            });
+            
+            report += "\n📝 Daily Progress:\n";
+            const dayCards = document.querySelectorAll('.day-card');
+            dayCards.forEach((card, index) => {
+                const dayTitle = card.querySelector('.day-title').textContent;
+                const status = card.querySelector('.day-status').textContent;
+                const notes = card.querySelector('.notes-textarea').value;
+                
+                report += `Day ${index + 1}: ${dayTitle} - ${status}\n`;
+                if (notes.trim()) {
+                    report += `Notes: ${notes}\n`;
+                }
+                report += "\n";
+            });
+            
+            const blob = new Blob([report], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'leetcode-progress-report.txt';
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        // Generate progress report
+        function generateReport() {
+            const report = {
+                date: new Date().toISOString().split('T')[0],
+                stats: {
+                    completedProblems,
+                    currentStreak,
+                    contestsJoined,
+                    patternsLearned: Array.from(patternsLearned)
+                },
+                completionRate: ((completedProblems / 100) * 100).toFixed(1) + '%'
+            };
+            
+            alert(`📈 Progress Report (${report.date}):\n\n` +
+                  `✅ Completion Rate: ${report.completionRate}\n` +
+                  `📚 Problems Solved: ${completedProblems}/100\n` +
+                  `🔥 Current Streak: ${currentStreak} days\n` +
+                  `🏆 Contests: ${contestsJoined}\n` +
+                  `🧠 Patterns: ${patternsLearned.size}/15`);
+        }
+
+        // Utility functions
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+
+        function showSyncStatus(message, type = 'success') {
+            const statusEl = document.getElementById('syncStatus');
+            statusEl.textContent = message;
+            statusEl.className = `sync-status ${type} show`;
+            
+            setTimeout(() => {
+                statusEl.classList.remove('show');
+            }, 3000);
+        }
+
+        // Auto-save every 30 seconds
+        setInterval(() => {
+            if (window.saveToFirebase) {
+                window.saveToFirebase();
+            } else {
+                saveToLocal();
+            }
+        }, 30000);
+    </script>
+</body>
+</html>
