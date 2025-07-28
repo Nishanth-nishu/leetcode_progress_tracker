@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>30-Day LeetCode Progress Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: #f8f9fa;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #3498db;
+        }
+
+        .stat-label {
+            color: #666;
+            margin-top: 10px;
+            font-weight: 500;
+        }
+
+        .progress-section {
+            padding: 30px;
+        }
+
+        .week-section {
+            margin-bottom: 40px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        .week-header {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            padding: 20px;
+            font-size: 1.3em;
+            font-weight: bold;
+        }
+
+        .day-grid {
+            display: grid;
+            gap: 15px;
+            padding: 20px;
+        }
+
+        .day-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            border-left: 5px solid #3498db;
+        }
+
+        .day-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .day-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .day-status {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .status-pending {
+            background: #f39c12;
+            color: white;
+        }
+
+        .status-completed {
+            background: #27ae60;
+            color: white;
+        }
+
+        .status-skipped {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .problems-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .problem-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .problem-item:hover {
+            background: #e9ecef;
+        }
+
+        .problem-checkbox {
+            margin-right: 12px;
+            transform: scale(1.2);
+            cursor: pointer;
+        }
+
+        .problem-name {
+            flex: 1;
+            font-weight: 500;
+        }
+
+        .problem-difficulty {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .difficulty-easy {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .difficulty-medium {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .difficulty-hard {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .pattern-tag {
+            display: inline-block;
+            background: #007bff;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            margin-left: 8px;
+        }
+
+        .notes-section {
+            margin-top: 15px;
+        }
+
+        .notes-textarea {
+            width: 100%;
+            min-height: 60px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        .contest-section {
+            background: linear-gradient(135deg, #8e44ad, #9b59b6);
+            color: white;
+            margin: 20px;
+            padding: 25px;
+            border-radius: 15px;
+        }
+
+        .contest-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .contest-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+        }
+
+        .export-section {
+            padding: 30px;
+            text-align: center;
+            background: #f8f9fa;
+        }
+
+        .export-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            margin: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .export-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🚀 30-Day LeetCode Mastery</h1>
+            <p>Track your progress, build patterns, boost your profile!</p>
+        </div>
+
+        <!-- Stats Dashboard -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="completedProblems">0</div>
+                <div class="stat-label">Problems Solved</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="currentStreak">0</div>
+                <div class="stat-label">Day Streak</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="contestsJoined">0</div>
+                <div class="stat-label">Contests Joined</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="patternsLearned">0</div>
+                <div class="stat-label">Patterns Mastered</div>
+            </div>
+        </div>
+
+        <!-- Contest Tracking -->
+        <div class="contest-section">
+            <h2>📊 Contest Performance Tracker</h2>
+            <div class="contest-grid">
+                <div class="contest-card">
+                    <h3>Weekly Contest #420</h3>
+                    <p><strong>Date:</strong> <input type="date" style="background: transparent; border: 1px solid white; color: white; padding: 5px; border-radius: 5px;"></p>
+                    <p><strong>Problems Solved:</strong> <input type="number" min="0" max="4" style="width: 60px; background: transparent; border: 1px solid white; color: white; text-align: center; padding: 5px; border-radius: 5px;"> / 4</p>
+                    <p><strong>Rank:</strong> <input type="number" style="width: 80px; background: transparent; border: 1px solid white; color: white; text-align: center; padding: 5px; border-radius: 5px;"></p>
+                </div>
+                <div class="contest-card">
+                    <h3>Biweekly Contest #145</h3>
+                    <p><strong>Date:</strong> <input type="date" style="background: transparent; border: 1px solid white; color: white; padding: 5px; border-radius: 5px;"></p>
+                    <p><strong>Problems Solved:</strong> <input type="number" min="0" max="4" style="width: 60px; background: transparent; border: 1px solid white; color: white; text-align: center; padding: 5px; border-radius: 5px;"> / 4</p>
+                    <p><strong>Rank:</strong> <input type="number" style="width: 80px; background: transparent; border: 1px solid white; color: white; text-align: center; padding: 5px; border-radius: 5px;"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Tracking -->
+        <div class="progress-section">
+            <div class="week-section">
+                <div class="week-header">Week 1: Foundation Patterns (Arrays, Hashing, Two Pointers)</div>
+                <div class="day-grid">
+                    <div class="day-card" data-day="1">
+                        <div class="day-header">
+                            <div class="day-title">Day 1: Array Fundamentals</div>
+                            <div class="day-status status-pending" onclick="toggleDayStatus(this)">Pending</div>
+                        </div>
+                        <div class="problems-list">
+                            <div class="problem-item">
+                                <input type="checkbox" class="problem-checkbox">
+                                <span class="problem-name">[1] Two Sum</span>
+                                <span class="problem-difficulty difficulty-easy">Easy</span>
+                                <span class="pattern-tag">HashMap</span>
+                            </div>
+                            <div class="problem-item">
+                                <input type="checkbox" class="problem-checkbox">
+                                <span class="problem-name">[217] Contains Duplicate</span>
+                                <span class="problem-difficulty difficulty-easy">Easy</span>
+                                <span class="pattern-tag">HashSet</span>
+                            </div>
+                            <div class="problem-item">
+                                <input type="checkbox" class="problem-checkbox">
+                                <span class="problem-name">[53] Maximum Subarray</span>
+                                <span class="problem-difficulty difficulty-easy">Easy</span>
+                                <span class="pattern-tag">Kadane's</span>
+                            </div>
+                        </div>
+                        <div class="notes-section">
+                            <textarea class="notes-textarea" placeholder="Notes: Key patterns learned, difficulties faced, insights..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="day-card" data-day="2">
+                        <div class="day-header">
+                            <div class="day-title">Day 2: Hashing Mastery</div>
+                            <div class="day-status status-pending" onclick="toggleDayStatus(this)">Pending</div>
+                        </div>
+                        <div class="problems-list">
+                            <div class="problem-item">
+                                <input type="checkbox" class="problem-checkbox">
+                                <span class="problem-name">[242] Valid Anagram</span>
+                                <span class="problem-difficulty difficulty-easy">Easy</span>
+                                <span class="pattern-tag">Frequency</span>
+                            </div>
+                            <div class="problem-item">
+                                <input type="checkbox" class="problem-checkbox">
+                                <span class="problem-name">[49] Group Anagrams</span>
+                                <span class="problem-difficulty difficulty-medium">Medium</span>
+                                <span class="pattern-tag">Grouping</span>
+                            </div>
+                            <div class="problem-item">
+                                <input type="checkbox" class="problem-checkbox">
+                                <span class="problem-name">[347] Top K Frequent Elements</span>
+                                <span class="problem-difficulty difficulty-medium">Medium</span>
+                                <span class="pattern-tag">Bucket Sort</span>
+                            </div>
+                        </div>
+                        <div class="notes-section">
+                            <textarea class="notes-textarea" placeholder="Notes: Key patterns learned, difficulties faced, insights..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="day-card" data-day="3">
+                        <div class="day-header">
+                            <div class="day-title">Day 3: Two Pointers Introduction</div>
+                            <div class="day-status status-pending" onclick="toggleDayStatus(this)">Pending</div>
+                        </div>
+                        <div class="problems-list">
+                            <div class="problem-item">
+                                <input type="checkbox" class="problem-checkbox">
+                                <span class="problem-name">[125] Valid Palindrome</span>
+                                <span class="problem-difficulty difficulty-easy">Easy</span>
+                                <span class="pattern-tag">Two Pointers</span>
+                            </div>
+                            <div class="problem-item">
+                                <input type="checkbox" class="problem-checkbox">
+                                <span class="problem-name">[167] Two Sum II</span>
+                                <span class="problem-difficulty difficulty-easy">Easy</span>
+                                <span class="pattern-tag">Two Pointers</span>
+                            </div>
+                            <div class="problem-item">
+                                <input type="checkbox" class="problem-checkbox">
+                                <span class="problem-name">[15] 3Sum</span>
+                                <span class="problem-difficulty difficulty-medium">Medium</span>
+                                <span class="pattern-tag">Two Pointers</span>
+                            </div>
+                        </div>
+                        <div class="notes-section">
+                            <textarea class="notes-textarea" placeholder="Notes: Key patterns learned, difficulties faced, insights..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="day-card" data-day="4">
+                        <div class="day-header">
+                            <div class="day-title">Day 4: Advanced Array Techniques</div>
+                            <div class="day-status status-pending" onclick="toggleDayStatus(this)">Pending</div>
+                        </div>
+                        <div class="problems-list">
+                            <div class="problem-item">
+                                <input type="checkbox" class="problem-checkbox">
+                                <span class="problem-name">[238] Product of Array Except Self</span>
+                                <span class="problem-difficulty difficulty-medium">Medium</span>
+                                <span class="pattern-tag">Prefix/Suffix</span>
+                            </div>
+                            <div class="problem-item">
+                                <input type="checkbox" class="problem-checkbox">
+                                <span class="problem-name">[121] Best Time to Buy and Sell Stock</span>
+                                <span class="problem-difficulty difficulty-easy">Easy</span>
+                                <span class="pattern-tag">One Pass</span>
+                            </div>
+                            <div class="problem-item">
+                                <input type="checkbox" class="problem-checkbox">
+                                <span class="problem-name">[122] Best Time to Buy and Sell Stock II</span>
+                                <span class="problem-difficulty difficulty-medium">Medium</span>
+                                <span class="pattern-tag">Greedy</span>
+                            </div>
+                        </div>
+                        <div class="notes-section">
+                            <textarea class="notes-textarea" placeholder="Notes: Key patterns learned, difficulties faced, insights..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="day-card" data-day="5">
+                        <div class="day-header">
+                            <div class="day-title">Day 5: Sliding Window</div>
+                            <div class="day-status status-pending" onclick="toggleDayStatus(this)">Pending</div>
+                        </div>
+                        <div class="problems-list">
+                            <div class="problem-item">
+                                <input type="checkbox" class="problem-checkbox">
+                                <span class="problem-name">[3] Longest Substring Without Repeating Characters</span>
+                                <span class="problem-difficulty difficulty-medium">Medium</span>
+                                <span class="pattern-tag">Sliding Window</span>
+                            </div>
+                            <div class="problem-item">
+                                <input type="checkbox" class="problem-checkbox">
+                                <span class="problem-name">[424] Longest Repeating Character Replacement</span>
+                                <span class="problem-difficulty difficulty-medium">Medium</span>
+                                <span class="pattern-tag">Sliding Window</span>
+                            </div>
+                            <div class="problem-item">
+                                <input type="checkbox" class="problem-checkbox">
+                                <span class="problem-name">[567] Permutation in String</span>
+                                <span class="problem-difficulty difficulty-medium">Medium</span>
+                                <span class="pattern-tag">Sliding Window</span>
+                            </div>
+                        </div>
+                        <div class="notes-section">
+                            <textarea class="notes-textarea" placeholder="Notes: Key patterns learned, difficulties faced, insights..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="day-card" data-day="6">
+                        <div class="day-header">
+                            <div class="day-title">Day 6: Hard Array Problems</div>
+                            <div class="day-status status-pending" onclick="toggleDayStatus(this)">Pending</div>
+                        </div>
+                        <div class="problems-list">
+                            <div class="problem-item">
+                                <input type="checkbox" class="problem-checkbox">
+                                <span class="problem-name">[128] Longest Consecutive Sequence</span>
+                                <span class="problem-difficulty difficulty-hard">Hard</span>
+                                <span class="pattern-tag">Union-Find</span>
+                            </div>
+                            <div class="problem-item">
+                                <input type="checkbox" class="problem-checkbox">
+                                <span class="problem-name">[560] Subarray Sum Equals K</span>
+                                <span class="problem-difficulty difficulty-medium">Medium</span>
+                                <span class="pattern-tag">Prefix Sum</span>
+                            </div>
+                            <div class="problem-item">
+                                <input type="checkbox" class="problem-checkbox">
+                                <span class="problem-name">[76] Minimum Window Substring</span>
+                                <span class="problem-difficulty difficulty-hard">Hard</span>
+                                <span class="pattern-tag">Sliding Window</span>
+                            </div>
+                        </div>
+                        <div class="notes-section">
+                            <textarea class="notes-textarea" placeholder="Notes: Key patterns learned, difficulties faced, insights..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="day-card" data-day="7">
+                        <div class="day-header">
+                            <div class="day-title">Day 7: Contest + Review</div>
+                            <div class="day-status status-pending" onclick="toggleDayStatus(this)">Pending</div>
+                        </div>
+                        <div class="problems-list">
+                            <div class="problem-item">
+                                <input type="checkbox" class="problem-checkbox">
+                                <span class="problem-name">Weekly Contest Participation</span>
+                                <span class="problem-difficulty difficulty-medium">Contest</span>
+                                <span class="pattern-tag">Profile Boost</span>
+                            </div>
+                            <div class="problem-item">
+                                <input type="checkbox" class="problem-checkbox">
+                                <span class="problem-name">Review 2 problems from this week</span>
+                                <span class="problem-difficulty difficulty-easy">Review</span>
+                                <span class="pattern-tag">Reinforcement</span>
+                            </div>
+                            <div class="problem-item">
+                                <input type="checkbox" class="problem-checkbox">
+                                <span class="problem-name">Document patterns learned</span>
+                                <span class="problem-difficulty difficulty-easy">Documentation</span>
+                                <span class="pattern-tag">Knowledge</span>
+                            </div>
+                        </div>
+                        <div class="notes-section">
+                            <textarea class="notes-textarea" placeholder="Notes: Contest performance, patterns mastered, areas to improve..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Week 2 -->
+            <div class="week-section">
+                <div class="week-header">Week 2: Linear Data Structures (Linked Lists, Stacks, Queues)</div>
+                <div class="day-grid">
+                    <div class="day-card" data-day="8">
+                        <div class="day-header">
+                            <div class="day-title">Day 8: Linked List Basics</div>
+                            <div class="day-status status-pending" onclick="toggleDayStatus(this)">Pending</div>
+                        </div>
+                        <div class="problems-list">
+                            <div class="problem-item">
+                                <input type="checkbox" class="problem-checkbox">
+                                <span class="problem-name">[206] Reverse Linked List</span>
+                                <span class="problem-difficulty difficulty-easy">Easy</span>
+                                <span class="pattern-tag">Linked List</span>
+                            </div>
+                            <div class="problem-item">
+                                <input type="checkbox" class="problem-checkbox">
+                                <span class="problem-name">[21] Merge Two Sorted Lists</span>
+                                <span class="problem-difficulty difficulty-easy">Easy</span>
+                                <span class="pattern-tag">Merge</span>
+                            </div>
+                            <div class="problem-item">
+                                <input type="checkbox" class="problem-checkbox">
+                                <span class="problem-name">[141] Linked List Cycle</span>
+                                <span class="problem-difficulty difficulty-easy">Easy</span>
+                                <span class="pattern-tag">Two Pointers</span>
+                            </div>
+                        </div>
+                        <div class="notes-section">
+                            <textarea class="notes-textarea" placeholder="Notes: Key patterns learned, difficulties faced, insights..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Continue with more days... -->
+                    <div class="day-card" data-day="9">
+                        <div class="day-header">
+                            <div class="day-title">Day 9: Advanced Linked Lists</div>
+                            <div class="day-status status-pending" onclick="toggleDayStatus(this)">Pending</div>
+                        </div>
+                        <div class="problems-list">
+                            <div class="problem-item">
+                                <input type="checkbox" class="problem-checkbox">
+                                <span class="problem-name">[19] Remove Nth Node From End</span>
+                                <span class="problem-difficulty difficulty-medium">Medium</span>
+                                <span class="pattern-tag">Two Pointers</span>
+                            </div>
+                            <div class="problem-item">
+                                <input type="checkbox" class="problem-checkbox">
+                                <span class="problem-name">[143] Reorder List</span>
+                                <span class="problem-difficulty difficulty-medium">Medium</span>
+                                <span class="pattern-tag">Linked List</span>
+                            </div>
+                            <div class="problem-item">
+                                <input type="checkbox" class="problem-checkbox">
+                                <span class="problem-name">[2] Add Two Numbers</span>
+                                <span class="problem-difficulty difficulty-medium">Medium</span>
+                                <span class="pattern-tag">Math</span>
+                            </div>
+                        </div>
+                        <div class="notes-section">
+                            <textarea class="notes-textarea" placeholder="Notes: Key patterns learned, difficulties faced, insights..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Add remaining days for Week 2 -->
+                    <div class="day-card" data-day="10">
+                        <div class="day-header">
+                            <div class="day-title">Day 10: Stack Fundamentals</div>
+                            <div class="day-status status-pending" onclick="toggleDayStatus(this)">Pending</div>
+                        </div>
+                        <div class="problems-list">
+                            <div class="problem-item">
+                                <input type="checkbox" class="problem-checkbox">
+                                <span class="problem-name">[20] Valid Parentheses</span>
+                                <span class="problem-difficulty difficulty-easy">Easy</span>
+                                <span class="pattern-tag">Stack</span>
+                            </div>
+                            <div class="problem-item">
+                                <input type="checkbox" class="problem-checkbox">
+                                <span class="problem-name">[155] Min Stack</span>
+                                <span class="problem-difficulty difficulty-medium">Medium</span>
+                                <span class="pattern-tag">Design</span>
+                            </div>
+                            <div class="problem-item">
+                                <input type="checkbox" class="problem-checkbox">
+                                <span class="problem-name">[739] Daily Temperatures</span>
+                                <span class="problem-difficulty difficulty-medium">Medium</span>
+                                <span class="pattern-tag">Monotonic Stack</span>
+                            </div>
+                        </div>
+                        <div class="notes-section">
+                            <textarea class="notes-textarea" placeholder="Notes: Key patterns learned, difficulties faced, insights..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Week 3 & 4 Preview Cards -->
+            <div class="week-section">
+                <div class="week-header">Week 3: Trees, Binary Search & Heaps</div>
+                <div style="padding: 20px; text-align: center; color: #666;">
+                    <p>📅 Days 15-21: Binary Trees, BSTs, Binary Search, Heaps, Tries</p>
+                    <p><em>This section will auto-populate as you progress through the weeks</em></p>
+                </div>
+            </div>
+
+            <div class="week-section">
+                <div class="week-header">Week 4: Graphs, Dynamic Programming & Advanced Patterns</div>
+                <div style="padding: 20px; text-align: center; color: #666;">
+                    <p>📅 Days 22-30: Graph Algorithms, DP, Backtracking, Mock Interviews</p>
+                    <p><em>Final week focuses on FAANG-level problems and interview simulation</em></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Export Section -->
+        <div class="export-section">
+            <h2>📊 Export Your Progress</h2>
+            <button class="export-btn" onclick="exportProgress()">📋 Export as Text</button>
+            <button class="export-btn" onclick="generateReport()">📈 Generate Report</button>
+            <button class="export-btn" onclick="saveData()">💾 Save Progress</button>
+        </div>
+    </div>
+
+    <script>
+        // Progress tracking variables
+        let completedProblems = 0;
+        let currentStreak = 0;
+        let contestsJoined = 0;
+        let patternsLearned = new Set();
+
+        // Load saved data
+        window.onload = function() {
+            loadSavedData();
+            updateStats();
+        };
+
+        function toggleDayStatus(element) {
+            const statuses = ['status-pending', 'status-completed', 'status-skipped'];
+            const statusTexts = ['Pending', 'Completed', 'Skipped'];
+            
+            let currentIndex = 0;
+            statuses.forEach((status, index) => {
+                if (element.classList.contains(status)) {
+                    currentIndex = index;
+                }
+            });
+            
+            // Remove current status
+            element.classList.remove(statuses[currentIndex]);
+            
+            // Add next status (cycle through)
+            const nextIndex = (currentIndex + 1) % statuses.length;
+            element.classList.add(statuses[nextIndex]);
+            element.textContent = statusTexts[nextIndex];
+            
+            // Update streak
+            updateStreak();
+            saveData();
+        }
+
+        // Add event listeners to checkboxes
+        document.addEventListener('DOMContentLoaded', function() {
+            const checkboxes = document.querySelectorAll('.problem-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const problemItem = this.closest('.problem-item');
+                    const patternTag = problemItem.querySelector('.pattern-tag');
+                    
+                    if (this.checked) {
+                        completedProblems++;
+                        problemItem.style.opacity = '0.7';
+                        problemItem.style.textDecoration = 'line-through';
+                        
+                        // Add pattern to learned set
+                        if (patternTag) {
+                            patternsLearned.add(patternTag.textContent);
+                        }
+                    } else {
+                        completedProblems--;
+                        problemItem.style.opacity = '1';
+                        problemItem.style.textDecoration = 'none';
+                    }
+                    
+                    updateStats();
+                    saveData();
+                });
+            });
+        });
+
+        function updateStats() {
+            document.getElementById('completedProblems').textContent = completedProblems;
+            document.getElementById('currentStreak').textContent = currentStreak;
+            document.getElementById('contestsJoined').textContent = contestsJoined;
+            document.getElementById('patternsLearned').textContent = patternsLearned.size;
+        }
+
+        function updateStreak() {
+            const completedDays = document.querySelectorAll('.status-completed').length;
+            currentStreak = completedDays;
+            updateStats();
+        }
+
+        function exportProgress() {
+            let report = "🚀 30-Day LeetCode Progress Report\n";
+            report += "=====================================\n\n";
+            report += `📊 Statistics:\n`;
+            report += `• Problems Solved: ${completedProblems}\n`;
+            report += `• Current Streak: ${currentStreak} days\n`;
+            report += `• Contests Joined: ${contestsJoined}\n`;
+            report += `• Patterns Learned: ${patternsLearned.size}\n\n`;
+            
+            report += "📚 Patterns Mastered:\n";
+            patternsLearned.forEach(pattern => {
+                report += `• ${pattern}\n`;
+            });
+            
+            report += "\n📝 Daily Progress:\n";
+            const dayCards = document.querySelectorAll('.day-card');
+            dayCards.forEach((card, index) => {
+                const dayTitle = card.querySelector('.day-title').textContent;
+                const status = card.querySelector('.day-status').textContent;
+                const notes = card.querySelector('.notes-textarea').value;
+                
+                report += `Day ${index + 1}: ${dayTitle} - ${status}\n`;
+                if (notes.trim()) {
+                    report += `Notes: ${notes}\n`;
+                }
+                report += "\n";
+            });
+            
+            // Create download
+            const blob = new Blob([report], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'leetcode-progress-report.txt';
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        function generateReport() {
+            const report = {
+                date: new Date().toISOString().split('T')[0],
+                stats: {
+                    completedProblems,
+                    currentStreak,
+                    contestsJoined,
+                    patternsLearned: Array.from(patternsLearned)
+                },
+                completionRate: ((completedProblems / 100) * 100).toFixed(1) + '%'
+            };
+            
+            alert(`📈 Progress Report (${report.date}):\n\n` +
+                  `✅ Completion Rate: ${report.completionRate}\n` +
+                  `📚 Problems Solved: ${completedProblems}/100\n` +
+                  `🔥 Current Streak: ${currentStreak} days\n` +
+                  `🏆 Contests: ${contestsJoined}\n` +
+                  `🧠 Patterns: ${patternsLearned.size}/15`);
+        }
+
+        function saveData() {
+            const data = {
+                completedProblems,
+                currentStreak,
+                contestsJoined,
+                patternsLearned: Array.from(patternsLearned),
+                dayStatuses: {},
+                problemStates: {},
+                notes: {}
+            };
+            
+            // Save day statuses
+            document.querySelectorAll('.day-card').forEach((card, index) => {
+                const status = card.querySelector('.day-status').textContent;
+                const notes = card.querySelector('.notes-textarea').value;
+                data.dayStatuses[index] = status;
+                data.notes[index] = notes;
+            });
+            
+            // Save problem states
+            document.querySelectorAll('.problem-checkbox').forEach((checkbox, index) => {
+                data.problemStates[index] = checkbox.checked;
+            });
+            
+            localStorage.setItem('leetcodeProgress', JSON.stringify(data));
+        }
+
+        function loadSavedData() {
+            const savedData = localStorage.getItem('leetcodeProgress');
+            if (!savedData) return;
+            
+            try {
+                const data = JSON.parse(savedData);
+                completedProblems = data.completedProblems || 0;
+                currentStreak = data.currentStreak || 0;
+                contestsJoined = data.contestsJoined || 0;
+                patternsLearned = new Set(data.patternsLearned || []);
+                
+                // Restore day statuses and notes
+                if (data.dayStatuses) {
+                    Object.keys(data.dayStatuses).forEach(index => {
+                        const dayCard = document.querySelectorAll('.day-card')[index];
+                        if (dayCard) {
+                            const statusElement = dayCard.querySelector('.day-status');
+                            const status = data.dayStatuses[index];
+                            
+                            // Remove all status classes
+                            statusElement.classList.remove('status-pending', 'status-completed', 'status-skipped');
+                            
+                            // Add correct status class
+                            if (status === 'Completed') {
+                                statusElement.classList.add('status-completed');
+                            } else if (status === 'Skipped') {
+                                statusElement.classList.add('status-skipped');
+                            } else {
+                                statusElement.classList.add('status-pending');
+                            }
+                            statusElement.textContent = status;
+                        }
+                    });
+                }
+                
+                // Restore notes
+                if (data.notes) {
+                    Object.keys(data.notes).forEach(index => {
+                        const dayCard = document.querySelectorAll('.day-card')[index];
+                        if (dayCard) {
+                            const textarea = dayCard.querySelector('.notes-textarea');
+                            textarea.value = data.notes[index] || '';
+                        }
+                    });
+                }
+                
+                // Restore problem states
+                if (data.problemStates) {
+                    Object.keys(data.problemStates).forEach(index => {
+                        const checkbox = document.querySelectorAll('.problem-checkbox')[index];
+                        if (checkbox) {
+                            checkbox.checked = data.problemStates[index];
+                            const problemItem = checkbox.closest('.problem-item');
+                            if (checkbox.checked) {
+                                problemItem.style.opacity = '0.7';
+                                problemItem.style.textDecoration = 'line-through';
+                            }
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading saved data:', error);
+            }
+        }
+
+        // Auto-save every 30 seconds
+        setInterval(saveData, 30000);
+    </script>
+</body>
+</html>
